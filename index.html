@@ -1,0 +1,350 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>ルート捲り & 施設削除 操作マニュアル</title>
+<style>
+  :root{
+    --bg:#eef1f5; --panel:#ffffff; --ink:#1a2230; --ink-soft:#4a5567; --ink-faint:#7b8698;
+    --line:#dbe0e8; --line-soft:#e9edf2; --field:#f2f5f9;
+    --meku:#2f6bb0; --guard:#1f8f7f; --ring:#0e93a6; --loot:#c23f6e; --tool:#6b7178; --log:#4f6672; --fac:#d9781f;
+    --warn-bg:#fdf3e7; --warn-line:#e6a860; --warn-ink:#8a5312;
+    --good-bg:#eaf5ee; --good-line:#5aa878; --good-ink:#256b45;
+    --accent:var(--meku);
+    --shadow:0 1px 2px rgba(20,30,50,.06),0 6px 18px rgba(20,30,50,.07);
+    --radius:12px;
+    --mono:ui-monospace,"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    --sans:"Hiragino Kaku Gothic ProN","Yu Gothic Medium","Yu Gothic","Meiryo",system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#14171c; --panel:#1d2127; --ink:#e7ebf1; --ink-soft:#aab3c0; --ink-faint:#79828f;
+      --line:#2c323b; --line-soft:#242a32; --field:#12151a;
+      --meku:#5aa9ec; --guard:#3ec7b6; --ring:#2fd3e8; --loot:#ff6fa0; --tool:#a3aab3; --log:#8ea6b3; --fac:#f0973c;
+      --warn-bg:#2c2113; --warn-line:#b07a30; --warn-ink:#f0c184;
+      --good-bg:#152a1e; --good-line:#3f7a56; --good-ink:#8fd6aa;
+      --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#eef1f5; --panel:#ffffff; --ink:#1a2230; --ink-soft:#4a5567; --ink-faint:#7b8698;
+    --line:#dbe0e8; --line-soft:#e9edf2; --field:#f2f5f9;
+    --meku:#2f6bb0; --guard:#1f8f7f; --ring:#0e93a6; --loot:#c23f6e; --tool:#6b7178; --log:#4f6672; --fac:#d9781f;
+    --warn-bg:#fdf3e7; --warn-line:#e6a860; --warn-ink:#8a5312;
+    --good-bg:#eaf5ee; --good-line:#5aa878; --good-ink:#256b45;
+    --shadow:0 1px 2px rgba(20,30,50,.06),0 6px 18px rgba(20,30,50,.07);
+  }
+  :root[data-theme="dark"]{
+    --bg:#14171c; --panel:#1d2127; --ink:#e7ebf1; --ink-soft:#aab3c0; --ink-faint:#79828f;
+    --line:#2c323b; --line-soft:#242a32; --field:#12151a;
+    --meku:#5aa9ec; --guard:#3ec7b6; --ring:#2fd3e8; --loot:#ff6fa0; --tool:#a3aab3; --log:#8ea6b3; --fac:#f0973c;
+    --warn-bg:#2c2113; --warn-line:#b07a30; --warn-ink:#f0c184;
+    --good-bg:#152a1e; --good-line:#3f7a56; --good-ink:#8fd6aa;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{margin:0}
+  .wrap{max-width:820px;margin:0 auto;padding:0 20px 80px;font-family:var(--sans);color:var(--ink);background:var(--bg);
+    line-height:1.75;font-size:16px;-webkit-font-smoothing:antialiased;font-feature-settings:"palt" 1;}
+  .wrap::before{content:"";position:fixed;inset:0;background:var(--bg);z-index:-1}
+
+  /* header */
+  header{padding:40px 0 20px;border-bottom:2px solid var(--line)}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 8px}
+  h1{font-size:31px;line-height:1.25;margin:0 0 10px;font-weight:800;text-wrap:balance;letter-spacing:.01em}
+  .lede{font-size:15px;color:var(--ink-soft);margin:0;max-width:60ch}
+  .ver{display:inline-block;margin-top:14px;font:600 12px/1 var(--mono);color:var(--ink-faint);
+    border:1px solid var(--line);border-radius:20px;padding:6px 11px}
+
+  /* toc */
+  nav{position:sticky;top:0;z-index:5;margin:0 -20px 8px;padding:12px 20px;background:color-mix(in srgb,var(--bg) 86%,transparent);
+    backdrop-filter:blur(8px);border-bottom:1px solid var(--line-soft);display:flex;gap:7px;overflow-x:auto;scrollbar-width:none}
+  nav::-webkit-scrollbar{display:none}
+  nav a{flex:0 0 auto;font-size:12.5px;font-weight:700;text-decoration:none;color:var(--ink-soft);
+    border:1px solid var(--line);border-radius:8px;padding:5px 11px;white-space:nowrap;transition:.15s}
+  nav a:hover{color:var(--ink);border-color:var(--ink-faint)}
+  nav a .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:middle;background:var(--k,var(--accent))}
+
+  /* sections */
+  section{margin-top:34px;scroll-margin-top:64px}
+  .card{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--k,var(--accent));
+    border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+  .card>.head{padding:13px 20px;background:var(--k,var(--accent));color:#fff;display:flex;align-items:center;gap:10px}
+  .card>.head h2{margin:0;font-size:18px;font-weight:800;letter-spacing:.02em;text-shadow:0 1px 2px rgba(0,0,0,.25)}
+  .card>.head .tag{margin-left:auto;font:700 11px/1 var(--mono);background:rgba(255,255,255,.22);padding:5px 9px;border-radius:6px;letter-spacing:.03em}
+  .card>.body{padding:18px 20px 22px}
+  .card>.body>*:first-child{margin-top:0}
+  .card>.body>*:last-child{margin-bottom:0}
+  h3{font-size:14px;margin:20px 0 8px;font-weight:800;color:var(--ink);letter-spacing:.02em}
+  p{margin:10px 0}
+  .muted{color:var(--ink-soft);font-size:14.5px}
+
+  /* steps */
+  ol.steps{list-style:none;counter-reset:s;margin:12px 0;padding:0}
+  ol.steps>li{counter-increment:s;position:relative;padding:9px 0 9px 42px;border-top:1px solid var(--line-soft)}
+  ol.steps>li:first-child{border-top:0}
+  ol.steps>li::before{content:counter(s);position:absolute;left:0;top:9px;width:27px;height:27px;border-radius:8px;
+    background:var(--k,var(--accent));color:#fff;font:800 14px/27px var(--mono);text-align:center}
+  ul.plain{margin:10px 0;padding-left:20px}
+  ul.plain li{margin:5px 0}
+
+  /* key/pill */
+  b.k{font-family:var(--mono);font-size:12.5px;font-weight:700;background:var(--field);border:1px solid var(--line);
+    border-radius:5px;padding:2px 7px;color:var(--ink);white-space:nowrap}
+  .btn{display:inline-block;font:700 12px/1 var(--sans);color:#fff;border-radius:6px;padding:5px 9px;white-space:nowrap}
+
+  /* table */
+  .tw{overflow-x:auto;margin:14px 0;border:1px solid var(--line);border-radius:10px}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:440px}
+  th,td{text-align:left;padding:9px 13px;border-bottom:1px solid var(--line-soft);vertical-align:top}
+  thead th{background:var(--field);font-size:12px;letter-spacing:.03em;color:var(--ink-soft);font-weight:700}
+  tbody tr:last-child td{border-bottom:0}
+  td.opt{font-family:var(--mono);font-size:12.5px;font-weight:700;color:var(--ink);white-space:nowrap}
+  td.def{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:700;white-space:nowrap}
+
+  /* callouts */
+  .note{border-radius:10px;padding:12px 15px;margin:15px 0;font-size:14px;border:1px solid}
+  .note.warn{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn-ink)}
+  .note.good{background:var(--good-bg);border-color:var(--good-line);color:var(--good-ink)}
+  .note strong{font-weight:800}
+  .note .lab{font-weight:800;letter-spacing:.03em;margin-right:6px}
+
+  .legend{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin:6px 0}
+  .legend .it{display:flex;align-items:center;gap:9px;font-size:13.5px;padding:7px 10px;background:var(--panel);border:1px solid var(--line);border-radius:9px}
+  .legend .sw{width:14px;height:14px;border-radius:4px;flex:0 0 auto;background:var(--k)}
+  .legend .it b{font-weight:800}
+
+  footer{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--ink-faint);font-size:12.5px}
+  a.jump{color:var(--accent);font-weight:700;text-decoration:none}
+  a.jump:hover{text-decoration:underline}
+  @media (max-width:520px){ h1{font-size:25px} .wrap{font-size:15px} }
+</style>
+
+
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="eyebrow">ブラウザ三国志 ユーザースクリプト</p>
+  <h1>ルート捲り &amp; 施設削除<br>操作マニュアル</h1>
+  <p class="lede">マップのマスを順に捲る／鹵獲する「ルート捲り」と、拠点の施設を自動削除する「施設削除」。この2本の使い方をまとめました。パネルの色分けとこのマニュアルの色は対応しています。</p>
+  <span class="ver">ルート捲り v5.42 ・ 施設削除 v0.20</span>
+</header>
+
+<nav aria-label="目次">
+  <a href="#start"><span class="dot"></span>はじめに</a>
+  <a href="#panel" style="--k:var(--meku)"><span class="dot" style="--k:var(--meku)"></span>画面の見方</a>
+  <a href="#meku" style="--k:var(--meku)"><span class="dot" style="--k:var(--meku)"></span>めくり</a>
+  <a href="#guard"><span class="dot" style="--k:var(--guard)"></span>番人</a>
+  <a href="#ring"><span class="dot" style="--k:var(--ring)"></span>リング</a>
+  <a href="#loot"><span class="dot" style="--k:var(--loot)"></span>鹵獲</a>
+  <a href="#cards"><span class="dot" style="--k:var(--loot)"></span>武将の排他</a>
+  <a href="#fac"><span class="dot" style="--k:var(--fac)"></span>施設削除</a>
+  <a href="#update"><span class="dot" style="--k:var(--tool)"></span>更新</a>
+  <a href="#trouble"><span class="dot" style="--k:var(--log)"></span>停止・困ったら</a>
+</nav>
+
+<!-- はじめに -->
+<section id="start">
+  <div class="card" style="--k:var(--accent)">
+    <div class="head"><h2>はじめに ・ 3ステップで始める</h2></div>
+    <div class="body">
+      <p>ルート捲りは全体地図で使い、施設削除は都市画面で使います。まずはめくりを動かしてみましょう。</p>
+      <ol class="steps">
+        <li>全体地図を開き、右上の <span class="btn" style="background:var(--fac)">≡ ルート捲り</span> を押してパネルを開く。</li>
+        <li><b class="k">🔵 めくり</b> ブロックで <b class="k">この拠点の武将を取得</b> → 使う武将に <b class="k">☑</b>（自動保存）。</li>
+        <li><b class="k">ルート作成: ON</b> にしてマップのマスを順にクリック → <b class="k">開始</b>。</li>
+      </ol>
+      <div class="note warn"><span class="lab">自己責任</span>自動出兵は規約でBOT行為とみなされる可能性があります。BAN・規約リスクは利用者自身の責任で。長時間の無人放置ほどリスクは上がります。ツールは手動出兵と同じリクエストを送るだけで、検出回避はしません。</div>
+      <div class="note good"><span class="lab">最初の一度だけ</span>作り替えた武将選択は出兵に直結します。長く回す前に、<strong>少量で「意図した武将・拠点で出るか」</strong>を必ず確認してください（<a class="jump" href="#cards">武将の排他</a>参照）。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 画面の見方 -->
+<section id="panel">
+  <div class="card" style="--k:var(--meku)">
+    <div class="head"><h2>画面の見方</h2><span class="tag">7ブロック</span></div>
+    <div class="body">
+      <p>パネルは色分けされたブロックの折りたたみ式です。見出しをクリックで開閉し、状態は記憶されます。上部の <b class="k">■ 全停止</b> と <b class="k">進撃P/名声</b> は常に表示されます。</p>
+      <div class="legend">
+        <div class="it" style="--k:var(--meku)"><span class="sw"></span><b>めくり</b>／武将選択</div>
+        <div class="it" style="--k:var(--guard)"><span class="sw"></span><b>番人モード</b></div>
+        <div class="it" style="--k:var(--ring)"><span class="sw"></span><b>リング</b></div>
+        <div class="it" style="--k:var(--loot)"><span class="sw"></span><b>鹵獲</b></div>
+        <div class="it" style="--k:var(--tool)"><span class="sw"></span><b>ツール</b></div>
+        <div class="it" style="--k:var(--log)"><span class="sw"></span><b>ログ</b></div>
+      </div>
+      <p class="muted">パネルは全画面で読み込まれます（鹵獲の自動再出兵などが裏で回り続けるため）。操作するのは全体地図でOKです。</p>
+    </div>
+  </div>
+</section>
+
+<!-- めくり -->
+<section id="meku">
+  <div class="card" style="--k:var(--meku)">
+    <div class="head"><h2>🔵 めくり（ルート捲り）</h2></div>
+    <div class="body">
+      <p>単騎でマスを順に捲る（＝取得する）機能。武将の選択もこのブロックで行います。</p>
+      <h3>手順</h3>
+      <ol class="steps" style="--k:var(--meku)">
+        <li><b class="k">出兵拠点</b> を選ぶ（★は現在地）。無ければ <b class="k">↻</b> で本拠地含む全拠点を再取得。</li>
+        <li><b class="k">この拠点の武将を取得</b> → 出てきた武将に <b class="k">☑</b>。複数チェックでローテーション。<strong>☑した武将が自動保存され、めくり武将になります</strong>（登録ボタンは不要）。</li>
+        <li><b class="k">ルート作成: ON</b> → マップのマスを順にクリックして経由地を作る。<b class="k">1つ戻す</b>／<b class="k">クリア</b>で修正。</li>
+        <li><b class="k">ルート確認</b> で赤=取得予定・黄=等級超で止まる可能性・灰=回避、を確認 → <b class="k">開始</b>。</li>
+      </ol>
+      <h3>設定の意味</h3>
+      <div class="tw"><table>
+        <thead><tr><th>項目</th><th>既定</th><th>意味</th></tr></thead>
+        <tbody>
+          <tr><td class="opt">敵の最大等級</td><td class="def">9</td><td>この等級を超える敵マスに当たったら中止（強敵を踏まない安全弁）。</td></tr>
+          <tr><td class="opt">最低勝率%</td><td class="def">100</td><td>勝率がこれ未満のマスはスキップ。100=確実に勝てる時だけ。</td></tr>
+          <tr><td class="opt">城で中止</td><td class="def">ON</td><td>城に当たったら止める。</td></tr>
+          <tr><td class="opt">残P停止／残名声停止</td><td class="def">0</td><td>進撃P・名声がこの値まで減ったら停止。0=無制限。</td></tr>
+          <tr><td class="opt">到着待ち上限秒</td><td class="def">120</td><td>1マスの到着をこの秒数まで待つ。</td></tr>
+          <tr><td class="opt">斜め可(8方向)</td><td class="def">ON</td><td>斜め移動を許可。OFFで4方向のみ。</td></tr>
+          <tr><td class="opt">断崖を超えない</td><td class="def">OFF</td><td>断崖を跨ぐ経路を避ける。</td></tr>
+          <tr><td class="opt">拠点/砦/塔/村を回避</td><td class="def">ON</td><td>単騎で捲れない施設を迂回（BFS）。</td></tr>
+          <tr><td class="opt">領地も回避</td><td class="def">OFF</td><td>ONで領地も避ける（大回りになる）。</td></tr>
+          <tr><td class="opt">マス間隔秒</td><td class="def">1〜2</td><td>各マスの間隔（乱数）。</td></tr>
+          <tr><td class="opt">最速(囲い用)</td><td class="def">OFF</td><td>間隔を詰めて高速に。囲い作成向け。</td></tr>
+          <tr><td class="opt">経由地以外を破棄</td><td class="def">OFF</td><td>経由地チェックした所だけ残し、他は取得後すぐ破棄。</td></tr>
+        </tbody>
+      </table></div>
+      <div class="note good"><span class="lab">継続する</span>画面を移動・リロードしても、前進中だっためくりは自動で再開します。めくり武将（☑）はリロード後も保持されます。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 番人 -->
+<section id="guard">
+  <div class="card" style="--k:var(--guard)">
+    <div class="head"><h2>🛡 番人モード</h2></div>
+    <div class="body">
+      <p>設定したルート上のマスを見張り、<strong>空き地になったら自動で取り直す</strong>機能。囲い（リング）を維持したいときに。放置OK・リロードしても継続します。</p>
+      <ol class="steps" style="--k:var(--guard)">
+        <li>維持したいマスを経由地クリックで2点以上セット（<a class="jump" href="#ring">リング生成</a>で一気に作れます）。</li>
+        <li><b class="k">間隔秒</b>（既定60）を決めて <b class="k">番人モード: ON</b>。</li>
+      </ol>
+      <p class="muted">めくりと番人は同時には走りません（排他）。番人ONの間はその監視が優先されます。</p>
+    </div>
+  </div>
+</section>
+
+<!-- リング -->
+<section id="ring">
+  <div class="card" style="--k:var(--ring)">
+    <div class="head"><h2>⭕ リング</h2></div>
+    <div class="body">
+      <p>指定した中心の周りを一周する経由地（リング）を自動生成します。拠点の隣接を囲って守るときに。</p>
+      <ol class="steps" style="--k:var(--ring)">
+        <li><b class="k">中心を地図で指定</b> を押し、守りたい拠点のマスをクリック（または <b class="k">中心</b> に座標を手入力）。</li>
+        <li><b class="k">距離</b>（中心から何マス外か）を決めて <b class="k">リング生成</b>。</li>
+        <li><b class="k">ルート確認</b> → <b class="k">開始</b>で捲る。維持したいなら <a class="jump" href="#guard">番人モード</a> をON。</li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- 鹵獲 -->
+<section id="loot">
+  <div class="card" style="--k:var(--loot)">
+    <div class="head"><h2>🏴 鹵獲（2チャンネル）</h2></div>
+    <div class="body">
+      <p>空き地へ武将を出して資源を持ち帰り、帰還したら自動で再出兵する周回機能。<strong>A・Bの2系統を別々の拠点・武将で</strong>同時に回せます（A=本拠地/塔、B=鹵獲用拠点など）。めくりと並行して動かせます。</p>
+      <h3>A・Bそれぞれで設定</h3>
+      <ol class="steps" style="--k:var(--loot)">
+        <li><b class="k">拠点</b> を選び <b class="k">武将取得</b> → 使う武将に <b class="k">☑</b>（自動保存。そのチャンネルの鹵獲武将になります）。</li>
+        <li><b class="k">鹵獲先を追加</b> を押し、マップの空き地をクリック（複数可）。</li>
+      </ol>
+      <h3>共通設定と開始</h3>
+      <ul class="plain">
+        <li><b class="k">時間(分/最大60)</b>：この時間で自動停止。上限は60分です。</li>
+        <li><b class="k">余裕(秒/乱)</b>：再出兵の間隔に足す余裕（乱数）。</li>
+        <li><b class="k">周回</b>：ONで帰還ごとに繰り返し。</li>
+        <li><b class="k">鹵獲開始(A+B)</b> でA・Bまとめて開始。残り時間と獲得資源（今回／累計）が表示されます。</li>
+      </ul>
+      <div class="note warn"><span class="lab">上限60分</span>長時間の連続出兵はリスクが高いため、1回の鹵獲は最大60分に制限しています。続けたい時は様子を見て再開してください。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 武将の排他 -->
+<section id="cards">
+  <div class="card" style="--k:var(--loot)">
+    <div class="head"><h2>武将の排他ルール</h2><span class="tag">重要</span></div>
+    <div class="body">
+      <p>同じ武将は同時に2つの用途では使えません（1体は1回しか出兵できないため）。そこで <strong>めくり・鹵獲A・鹵獲B は互いに排他ロック</strong>されます。</p>
+      <ul class="plain">
+        <li>めくりで☑した武将は、鹵獲A/Bのリストで <b class="k">🔒他用</b> となり選べません。</li>
+        <li>鹵獲に登録した武将は、めくりのリストで <b class="k">🔒鹵獲用</b> となり選べません。</li>
+      </ul>
+      <h3>解除のしかた</h3>
+      <ul class="plain">
+        <li><b>めくり武将を外す</b>：めくりのリストで☑を外す（＝自動で解除）。まとめて外すなら <b class="k">[全解除]</b>。</li>
+        <li><b>鹵獲武将を外す</b>：そのチャンネルのリストで☑を外す。めくり側に出る <b class="k">🔒鹵獲用 [解除]</b> からでも外せます。</li>
+      </ul>
+      <div class="note good"><span class="lab">確認</span>鹵獲する拠点とめくりする拠点が同じ場合もあるため、排他は<strong>双方向</strong>です。片方に入れたら他方では自動でロックされます。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 施設削除 -->
+<section id="fac">
+  <div class="card" style="--k:var(--fac)">
+    <div class="head"><h2>🧱 施設削除（別ツール）</h2></div>
+    <div class="body">
+      <p>拠点の施設を「残す数／壊す数」で指定して削除するツール。<strong>都市画面</strong>の拠点名ヘッダ横に出る <b class="k" style="color:var(--fac)">[施設削除]</b> を押すとパネルが開きます（全体地図など都市以外では出ません）。</p>
+      <ol class="steps" style="--k:var(--fac)">
+        <li>都市画面で <b class="k" style="color:var(--fac)">[施設削除]</b> をクリック。</li>
+        <li>施設ごとに <b class="k">残す数</b> を入力（チェックを入れると壊す対象が最低1になります）。</li>
+        <li>自動巡回を開始。<strong>削除はタイマー式で1拠点ずつ順番に</strong>進みます（1件あたり数十分〜1時間）。</li>
+        <li>対象を変えたい時は <b class="k">停止</b> → チェックを付け替え。停止で今の設定はリセットされ、チェックし直した施設が新しい対象になります。</li>
+      </ol>
+      <div class="note warn"><span class="lab">併用注意</span>これはオートビルダーの自動削除を切り出した代替ツールです。オートビルダーの自動削除と同時に動かすと施設を取り合うので、<strong>削除を動かすのはどちらか片方だけ</strong>にしてください。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 更新 -->
+<section id="update">
+  <div class="card" style="--k:var(--tool)">
+    <div class="head"><h2>更新のしかた</h2></div>
+    <div class="body">
+      <p>ツールはGistで配布され、自動更新に対応しています。手早く最新にするには：</p>
+      <ol class="steps" style="--k:var(--tool)">
+        <li>Tampermonkeyのダッシュボードを開く。</li>
+        <li><b class="k">最後の更新をチェック</b> を押す → 新しいバージョンがあれば自動で入れ替わります。ゲーム内に保存した設定は消えません。</li>
+      </ol>
+      <div class="note warn"><span class="lab">URLの見分け</span>末尾が <b class="k">/raw/ファイル名.user.js</b> のURL＝常に最新（自動更新）。<b class="k">/raw/長い英数字/…</b> が挟まるURL＝その時点で<strong>凍結</strong>。凍結URLを開くと古い版が入り直すので開かないこと。</div>
+      <p class="muted">中身を直したのにバージョン番号が同じだと「最後の更新をチェック」で拾われません。番号が上がっていれば更新されます。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 停止・困ったら -->
+<section id="trouble">
+  <div class="card" style="--k:var(--log)">
+    <div class="head"><h2>停止・困ったら</h2></div>
+    <div class="body">
+      <ul class="plain">
+        <li><b>すべて止めたい</b>：パネル上部の <b class="k">■ 全停止</b>。めくり・番人・鹵獲をまとめて停止し、取得済みマスは破棄して終了します。</li>
+        <li><b>ランチャーが消えた</b>：パネル生成でエラーが出た可能性。ページをリロード → それでも出なければ状況を伝えてください。</li>
+        <li><b>出兵拠点に本拠地が無い</b>：<b class="k">↻</b> を押すと本拠地含む全拠点を取り直します（★＝現在地が先頭）。</li>
+        <li><b>意図しない武将が出る</b>：<a class="jump" href="#cards">武将の排他</a>を確認。めくり／鹵獲の☑が正しいか、長時間動かす前に少量でテスト。</li>
+        <li><b>ログ</b>：📜ログブロックに動作履歴。<b class="k">ログをコピー</b>で共有できます。</li>
+      </ul>
+      <div class="note good"><span class="lab">継続の仕様</span>めくりの前進・鹵獲の周回・番人モードは、画面遷移やリロードでも裏で自動再開します。完全に止めたい時は各ブロックの停止か <b class="k">■ 全停止</b> を使ってください。</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  ブラウザ三国志 非公式ユーザースクリプト操作マニュアル ・ 利便性の自動化のみを目的とし、検出回避は行いません ・ BAN／規約リスクは利用者の自己責任です。
+</footer>
+</div>
+
+</body>
+</html>
