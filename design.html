@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>自動リング保護サイクル 設計図</title>
+<style>
+  :root{
+    --bg:#eef1f5; --panel:#ffffff; --ink:#18202c; --soft:#4a5567; --faint:#7b8698;
+    --line:#dbe0e8; --line2:#e9edf2; --field:#f2f5f9;
+    --day:#c07d1e; --hold:#4a5bc4; --truce:#12897a; --discard:#c23f6e; --take:#0e8fa2; --accent:#0e8fa2;
+    --warn-bg:#fdf3e7; --warn-line:#e6a860; --warn-ink:#8a5312;
+    --good-bg:#eaf5ee; --good-line:#5aa878; --good-ink:#256b45;
+    --shadow:0 1px 2px rgba(20,30,50,.06),0 6px 18px rgba(20,30,50,.07);
+    --mono:ui-monospace,"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    --sans:"Hiragino Kaku Gothic ProN","Yu Gothic Medium","Yu Gothic","Meiryo",system-ui,sans-serif;
+  }
+  @media (prefers-color-scheme:dark){:root{
+    --bg:#14171c; --panel:#1d2127; --ink:#e7ebf1; --soft:#aab3c0; --faint:#79828f;
+    --line:#2c323b; --line2:#242a32; --field:#12151a;
+    --day:#e0a03e; --hold:#7d8cef; --truce:#33c2ac; --discard:#ff6fa0; --take:#2fcfe4; --accent:#2fcfe4;
+    --warn-bg:#2c2113; --warn-line:#b07a30; --warn-ink:#f0c184;
+    --good-bg:#152a1e; --good-line:#3f7a56; --good-ink:#8fd6aa;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
+  }}
+  :root[data-theme="light"]{
+    --bg:#eef1f5; --panel:#ffffff; --ink:#18202c; --soft:#4a5567; --faint:#7b8698;
+    --line:#dbe0e8; --line2:#e9edf2; --field:#f2f5f9;
+    --day:#c07d1e; --hold:#4a5bc4; --truce:#12897a; --discard:#c23f6e; --take:#0e8fa2; --accent:#0e8fa2;
+    --warn-bg:#fdf3e7; --warn-line:#e6a860; --warn-ink:#8a5312; --good-bg:#eaf5ee; --good-line:#5aa878; --good-ink:#256b45;
+    --shadow:0 1px 2px rgba(20,30,50,.06),0 6px 18px rgba(20,30,50,.07);
+  }
+  :root[data-theme="dark"]{
+    --bg:#14171c; --panel:#1d2127; --ink:#e7ebf1; --soft:#aab3c0; --faint:#79828f;
+    --line:#2c323b; --line2:#242a32; --field:#12151a;
+    --day:#e0a03e; --hold:#7d8cef; --truce:#33c2ac; --discard:#ff6fa0; --take:#2fcfe4; --accent:#2fcfe4;
+    --warn-bg:#2c2113; --warn-line:#b07a30; --warn-ink:#f0c184; --good-bg:#152a1e; --good-line:#3f7a56; --good-ink:#8fd6aa;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 8px 22px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box} body{margin:0}
+  .wrap{max-width:840px;margin:0 auto;padding:0 20px 80px;font-family:var(--sans);color:var(--ink);background:var(--bg);line-height:1.7;font-size:16px;-webkit-font-smoothing:antialiased;font-feature-settings:"palt" 1}
+  .wrap::before{content:"";position:fixed;inset:0;background:var(--bg);z-index:-1}
+  header{padding:42px 0 22px;border-bottom:2px solid var(--line)}
+  .eyebrow{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:700;margin:0 0 8px}
+  h1{font-size:30px;line-height:1.24;margin:0 0 12px;font-weight:800;text-wrap:balance;letter-spacing:.01em}
+  .thesis{font-size:15.5px;color:var(--soft);margin:0;max-width:62ch}
+  .status{display:inline-flex;gap:8px;margin-top:16px;font:600 12px/1 var(--mono);color:var(--faint)}
+  .status b{border:1px solid var(--line);border-radius:20px;padding:6px 11px;font-weight:600}
+
+  h2{font-size:19px;margin:40px 0 4px;font-weight:800;letter-spacing:.01em;display:flex;align-items:center;gap:10px}
+  h2 .n{font:800 13px/1 var(--mono);color:var(--accent);border:1.5px solid var(--accent);border-radius:7px;padding:5px 8px}
+  .sub{color:var(--soft);font-size:14px;margin:2px 0 14px}
+
+  /* timeline */
+  .tl{position:relative;margin:8px 0 4px;padding-left:8px}
+  .tl::before{content:"";position:absolute;left:76px;top:6px;bottom:6px;width:2px;background:var(--line)}
+  .ev{position:relative;display:grid;grid-template-columns:66px 1fr;gap:16px;padding:9px 0}
+  .ev .t{font:700 12.5px/1.5 var(--mono);color:var(--soft);text-align:right;padding-top:11px;font-variant-numeric:tabular-nums}
+  .ev .node{position:absolute;left:70px;top:14px;width:15px;height:15px;border-radius:50%;background:var(--k,var(--accent));border:3px solid var(--bg);box-shadow:0 0 0 1px var(--k,var(--accent));z-index:1}
+  .ev.point .node{border-radius:3px;transform:rotate(45deg)}
+  .ev .box{background:var(--panel);border:1px solid var(--line);border-left:5px solid var(--k,var(--accent));border-radius:11px;box-shadow:var(--shadow);padding:12px 15px}
+  .ev .box h3{margin:0 0 4px;font-size:15px;font-weight:800}
+  .ev .box .ph{display:inline-block;font:700 10.5px/1 var(--mono);letter-spacing:.04em;color:#fff;background:var(--k,var(--accent));border-radius:5px;padding:4px 7px;margin-bottom:7px;text-transform:uppercase}
+  .ev .box p{margin:5px 0 0;font-size:14px;color:var(--soft)}
+  .ev .box p b{color:var(--ink);font-weight:700}
+
+  .tw{overflow-x:auto;margin:12px 0;border:1px solid var(--line);border-radius:11px;box-shadow:var(--shadow)}
+  table{border-collapse:collapse;width:100%;font-size:14px;min-width:460px;background:var(--panel)}
+  th,td{text-align:left;padding:10px 14px;border-bottom:1px solid var(--line2);vertical-align:top}
+  thead th{background:var(--field);font-size:12px;letter-spacing:.03em;color:var(--soft);font-weight:700}
+  tbody tr:last-child td{border-bottom:0}
+  td.p{font-family:var(--mono);font-size:12.5px;font-weight:700;white-space:nowrap}
+  td.v{font-variant-numeric:tabular-nums;color:var(--accent);font-weight:700;white-space:nowrap;font-family:var(--mono);font-size:13px}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:14px 0}
+  @media (max-width:640px){.cols{grid-template-columns:1fr}}
+  .col{background:var(--panel);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden}
+  .col>.h{padding:11px 15px;font-weight:800;font-size:14px;color:#fff;display:flex;align-items:center;gap:8px}
+  .col.reuse>.h{background:var(--truce)} .col.new>.h{background:var(--discard)}
+  .col ul{margin:0;padding:12px 15px 14px 30px}
+  .col li{margin:7px 0;font-size:14px}
+  .col li b{font-weight:700}
+  .col li code{font-family:var(--mono);font-size:12px;background:var(--field);border:1px solid var(--line);border-radius:4px;padding:1px 5px}
+
+  .note{border-radius:11px;padding:13px 16px;margin:14px 0;font-size:14px;border:1px solid}
+  .note.warn{background:var(--warn-bg);border-color:var(--warn-line);color:var(--warn-ink)}
+  .note.good{background:var(--good-bg);border-color:var(--good-line);color:var(--good-ink)}
+  .note .lab{font-weight:800;letter-spacing:.03em;margin-right:6px}
+  .note b{font-weight:800}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 2px}
+  .legend span{display:inline-flex;align-items:center;gap:7px;font-size:12.5px;font-weight:700;color:var(--soft);border:1px solid var(--line);border-radius:20px;padding:5px 11px}
+  .legend i{width:11px;height:11px;border-radius:50%;background:var(--k)}
+  footer{margin-top:44px;padding-top:18px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px}
+  @media (max-width:520px){h1{font-size:24px} .wrap{font-size:15px} .tl::before{left:64px} .ev{grid-template-columns:54px 1fr;gap:12px} .ev .node{left:58px}}
+</style>
+
+
+</head>
+<body>
+<div class="wrap">
+<header>
+  <p class="eyebrow">ブラウザ三国志 ・ 機能設計図</p>
+  <h1>自動リング保護サイクル</h1>
+  <p class="thesis">本拠地を中心にした3重リングを、保護が切れる前に「破棄→再取得」で回し続け、敵に隣接させない。休戦時間と保護3時間の仕様を逆算し、深夜の手動操作なしで朝まで安全に守る自動化。</p>
+  <div class="status"><b>状態: 設計フェーズ（未実装）</b><b>前提: 保護3h ・ 休戦1:00–6:10</b></div>
+</header>
+
+<h2><span class="n">01</span>これは何をする機能か</h2>
+<p class="sub">3つの狙いを1つのサイクルにまとめる。</p>
+<p style="font-size:14.5px;color:var(--soft);margin:6px 0">
+① <b style="color:var(--ink)">日中</b>は保護切れ前にリングを取り直して隣接を維持。
+② <b style="color:var(--ink)">夜（22時以降）</b>は埋めて保持し、破棄しない（休戦中に空き地を作らない）。
+③ <b style="color:var(--ink)">休戦の内側</b>で、外リングを「逆算破棄→即取得」でリフレッシュし、休戦明けを万全の保護で迎える。手動では深夜0時や2時に破棄をセットする必要があり非現実的なので、そこを自動化する。
+</p>
+<div class="legend">
+  <span style="--k:var(--day)"><i></i>日中サイクル</span>
+  <span style="--k:var(--hold)"><i></i>夜間確保</span>
+  <span style="--k:var(--truce)"><i></i>休戦</span>
+  <span style="--k:var(--discard)"><i></i>逆算破棄</span>
+  <span style="--k:var(--take)"><i></i>最速取得</span>
+</div>
+
+<h2><span class="n">02</span>1日のタイムライン</h2>
+<p class="sub">上から時系列。◆＝時刻ちょうどに起きる単発イベント、●＝その時間帯ずっと続くフェーズ。</p>
+<div class="tl">
+
+  <div class="ev" style="--k:var(--truce)">
+    <div class="t">6:10</div><div class="node"></div>
+    <div class="box"><span class="ph">休戦明け</span><h3>フレッシュな保護でリング確保済み</h3>
+    <p>前夜〜休戦内に取り直したリングが有効。ここから日中サイクルへ。</p></div>
+  </div>
+
+  <div class="ev" style="--k:var(--day)">
+    <div class="t">6:10<br>–22:00</div><div class="node"></div>
+    <div class="box"><span class="ph">日中サイクル</span><h3>保護切れ前に、外リング優先で取り直す</h3>
+    <p>各マスの保護が切れる<b>3〜7分前（乱数）</b>に、<b>外側のリングから優先</b>して <b>破棄→再取得</b>を<b>1マスずつ</b>実施。空き地は常に最大1マス・一瞬。</p></div>
+  </div>
+
+  <div class="ev point" style="--k:var(--hold)">
+    <div class="t">22:00</div><div class="node"></div>
+    <div class="box"><span class="ph">夜間確保 開始</span><h3>全リングを埋めて「保持」に切替</h3>
+    <p>締切は<b>マス毎に算出</b>（＝休戦1:00 − そのマスの保護時間。距離1-3の3h→22:00、外側30分保護→0:30）。締切までに取得すれば休戦入りまで保護が持つ＝朝まで安全。<b>締切以降に確保したマスは自動破棄しない。</b></p></div>
+  </div>
+
+  <div class="ev point" style="--k:var(--discard)">
+    <div class="t">≈23:30<br><span style="color:var(--faint)">/ 2:45</span></div><div class="node"></div>
+    <div class="box"><span class="ph">逆算破棄 発火</span><h3>外リングの破棄を、数秒ずつずらして自動開始</h3>
+    <p>「破棄を完了させたい時刻」から逆算した時刻に発火。<b>ノースキル≈23:30 / 領地統制≈2:45</b>。<b>数秒間隔で1マスずつ破棄開始</b>（同時に空けない）。<b>めくり・鹵獲と並行実行OK</b>。予約はリロードしても保持。</p></div>
+  </div>
+
+  <div class="ev" style="--k:var(--truce)">
+    <div class="t">1:00<br>–6:10</div><div class="node"></div>
+    <div class="box"><span class="ph">休戦</span><h3>攻撃不可＝空き地が安全。鹵獲は継続</h3>
+    <p>敵の領地/拠点への攻撃だけ不可。<b>鹵獲・空き地取得は可能</b>。この安全な時間内で破棄が順に完了していく。</p></div>
+  </div>
+
+  <div class="ev point" style="--k:var(--take)">
+    <div class="t">≈5:30<br><span style="color:var(--faint)">(任意)</span></div><div class="node"></div>
+    <div class="box"><span class="ph">トコロテン取得</span><h3>破棄完了を検知した瞬間、同じマスを最速で再取得</h3>
+    <p>完了目標は<b>休戦内で任意設定</b>（6:10手前に余裕＝サーバー遅延対策）。発火は<b>実際の破棄完了に追従</b>（land.phpの破棄タイマー）＝遅延に強い。<b>破棄完了→即最速取得→確保確認→次マス</b>を繰り返す。</p></div>
+  </div>
+
+  <div class="ev point" style="--k:var(--discard)">
+    <div class="t">6:10</div><div class="node"></div>
+    <div class="box"><span class="ph">脱退→味方マス奪取</span><h3>休戦明けの瞬間、脱退して味方マスを一斉最速取得</h3>
+    <p>味方が占有したまま残ったリングマスは、<b>6:10に同盟を脱退</b>して取得可能にし、<b>全マス一斉に最速でめくる</b>→<b>再加入</b>。距離3リング＝16マスで<b>10秒以上かかる＝敵に突破される窓</b>なので速度が命。<b>脱退/再加入は自動＋再加入成功を必ず確認。</b></p></div>
+  </div>
+
+  <div class="ev point" style="--k:var(--truce)">
+    <div class="t">6:10+</div><div class="node"></div>
+    <div class="box"><span class="ph">確保完了</span><h3>全リングが自分の領地・新しい保護で朝へ → 先頭に戻る</h3>
+    <p>日中サイクルへ復帰。</p></div>
+  </div>
+</div>
+
+<h2><span class="n">03</span>逆算破棄の計算</h2>
+<p class="sub">破棄開始 ＝ 目標完了時刻 − 所要時間。所要時間はスキルON/OFFの手動トグルで切替。</p>
+<div class="tw"><table>
+  <thead><tr><th>状態</th><th>破棄所要時間</th><th>完了5:30にしたい場合の開始時刻</th></tr></thead>
+  <tbody>
+    <tr><td class="p">ノースキル</td><td class="v">6:00:00</td><td class="v">23:30</td></tr>
+    <tr><td class="p">領地統制ON</td><td class="v">3:25:00</td><td class="v">2:05</td></tr>
+  </tbody>
+</table></div>
+<p style="font-size:13.5px;color:var(--soft);margin:6px 0">※領地統制LV10は破棄短縮155分（6:00→3:25）。スキル自体の自動発動は当面「手動」でOK、ここでは所要時間トグルだけ用意（将来スキル自動化を足す余地は残す）。</p>
+
+<h2><span class="n">04</span>パラメータ一覧</h2>
+<div class="tw"><table>
+  <thead><tr><th>パラメータ</th><th>既定</th><th>説明</th></tr></thead>
+  <tbody>
+    <tr><td class="p">中心座標</td><td class="v">地図クリック</td><td>本拠地＝リング中心（既存の「中心を地図で指定」）。</td></tr>
+    <tr><td class="p">リング距離</td><td class="v">1〜4+</td><td>距離1-3は3h保護の主リング。距離4以降はバッファ（敵が静かなら残る・best-effort）。</td></tr>
+    <tr><td class="p">保護時間</td><td class="v">3h / 可変</td><td>距離1-3＝3h固定。距離4+＝等級で30〜180分。<b>land.phpで各マスの保護残りを実読取</b>＝等級表は不要。</td></tr>
+    <tr><td class="p">休戦時間</td><td class="v">1:00–6:10</td><td>サーバー設定。この間リング系は停止。</td></tr>
+    <tr><td class="p">夜間確保境界</td><td class="v">マス毎に算出</td><td>締切＝休戦1:00 − そのマスの保護時間。3h→22:00 / 30分→0:30。実読取の保護残りから自動。</td></tr>
+    <tr><td class="p">敵接近判定</td><td class="v">周辺スキャン</td><td>近くに敵領地が無ければタイミング緩め、有れば精密（空き窓最小化）。</td></tr>
+    <tr><td class="p">目標破棄完了</td><td class="v">任意(休戦内)</td><td>例5:30。6:10手前に余裕を持たせる。</td></tr>
+    <tr><td class="p">破棄所要</td><td class="v">6h / 3h25m</td><td>領地統制ON/OFFトグル。</td></tr>
+    <tr><td class="p">ずらし秒</td><td class="v">数秒</td><td>破棄開始をマスごとにずらす間隔。</td></tr>
+    <tr><td class="p">リード乱数</td><td class="v">3〜7分</td><td>日中サイクルの取り直しタイミング。</td></tr>
+    <tr><td class="p">最大稼働時間</td><td class="v">3h(上限8h)</td><td>無人放置の安全弁。到達で自動停止＋通知。</td></tr>
+    <tr><td class="p">取得速度</td><td class="v">最速</td><td>朝の再取得は最速モード。</td></tr>
+  </tbody>
+</table></div>
+
+<h2><span class="n">05</span>使う部品 ・ 作る順番</h2>
+<p class="sub">既存機能を土台に、新規部品を足す。左＝流用、右＝新規。</p>
+<div class="cols">
+  <div class="col reuse"><div class="h">♻ 既存を流用</div>
+    <ul>
+      <li><b>リング生成</b> <code>genRing</code>／中心を地図指定</li>
+      <li><b>保護/破棄タイマー読取</b> <code>readCellTimers</code>（land.php）</li>
+      <li><b>1マスずつ破棄</b>（doRoteの逐次破棄）</li>
+      <li><b>最速モード</b></li>
+      <li><b>番人モード</b>（空き地監視の下地）</li>
+      <li><b>独立並行＋自動再開＋予約保持</b>（鹵獲の仕組み）</li>
+    </ul>
+  </div>
+  <div class="col new"><div class="h">✚ 新規に作る</div>
+    <ul>
+      <li><b>逆算スケジューラ</b>（完了時刻−所要→開始を算出・予約保持）</li>
+      <li><b>スタッガード破棄</b>（数秒ずつずらして破棄開始）</li>
+      <li><b>完了トリガの最速再取得</b>（検知→取得→確保確認→次）</li>
+      <li><b>時間帯ステートマシン</b>（日中／夜間／休戦の切替）</li>
+      <li><b>夜間確保ロジック</b>（埋めて破棄停止・破棄禁止フラグ）</li>
+      <li><b>所要時間トグル</b>（6h / 3h25m）</li>
+      <li><b>マス毎の保護実読取</b>（land.php→締切/リードを個別算出）</li>
+      <li><b>敵接近スキャン</b>（周辺の敵領地判定→精密/緩め切替）</li>
+      <li><b>脱退→奪取→再加入の自動化</b>（一斉最速＋<b>再加入成功を確認</b>・失敗警告）</li>
+      <li><b>最大稼働時間の安全弁</b>／リード乱数</li>
+    </ul>
+  </div>
+</div>
+
+<h2><span class="n">06</span>リング上のマス対応 ・ 番人連動</h2>
+<p class="sub">リングの周には空き地以外も混じる。種類ごとに動作が変わる。タイマー可視性は、自軍＝保護＋破棄／同盟員＝保護のみ（破棄は見えない）／敵＝不可。</p>
+<div class="tw"><table>
+  <thead><tr><th>マスの種類</th><th>動作</th></tr></thead>
+  <tbody>
+    <tr><td class="p">空き地</td><td>取得（通常）。</td></tr>
+    <tr><td class="p">自軍領地</td><td>保護サイクルで維持（保護切れ前に破棄→再取得）。保護＋破棄とも読める。</td></tr>
+    <tr><td class="p">味方領地<br>（同盟員）</td><td>保護残りは読める（破棄時間は不可）。夜は「味方保持」で守れている扱い。<b>朝：発火時に空きなら即取得／占有のまま残れば6:10に脱退して一斉最速で奪取→再加入。</b></td></tr>
+    <tr><td class="p">敵領地</td><td><b>取得不可</b>（攻撃行為・休戦中も不可）。スキップ＋<b>警告</b>（＝突破口）。既にある隣接はツールでは剥がせない＝手動対応。</td></tr>
+  </tbody>
+</table></div>
+<div class="note good"><span class="lab">番人連動</span>リングサイクルは<b>日中フェーズで番人挙動を内蔵</b>：リングのマスが予定外に空いたら自動で取り直す。同じリングに<b>単体番人を二重起動しない</b>（取り合い防止）。単体番人は本拠地リング以外の任意ルート維持用に残す。</div>
+<div class="note warn"><span class="lab">逆算計算機（味方と時刻合わせ）</span>味方に休戦内で取り直してもらう場合、<b>同盟員でも相手の破棄時間は見えない</b>ので時刻を計算して伝える必要がある。目標完了時刻＋相手の破棄所要時間（一度本人に確認）を入れると「相手は HH:MM に破棄開始すればいい」を算出。ツールは代理実行はしないが時刻計算を肩代わり。あなた自身の逆算破棄は自分のマスのみ（自分の破棄時間は読めるので無影響）。</div>
+
+<h2><span class="n">07</span>安全設計 ・ 確認事項</h2>
+<div class="note good"><span class="lab">BAN対策として自然に効く</span>夜間（休戦）は破棄→取得の往復をせず「22時に埋めて保持」なので、<b>一番BOTらしい深夜帯にほぼ無通信</b>。乱数リード・最大稼働時間の上限も併用。</div>
+<div class="note warn"><span class="lab">自己責任</span>長時間の無人自動化はBANリスクが最も高い機能。手動出兵と同じリクエストのみで検出回避はしない。<b>BAN/規約リスクは利用者の自己責任</b>。なお、このBAN評価は一般論からの推測でありブラ三固有の保証ではない。</div>
+<div class="note warn"><span class="lab">実装時に確認</span>破棄 <code>territory_proc.php?mode=remove</code> が<b>拠点切替を要するか</b>を実機で確認。座標+ssidのみで破棄できれば、めくり/鹵獲と完全無干渉で同時実行。切替が要る場合は一瞬だけ切替→戻すを出兵の合間に差し込む。</div>
+<div class="note warn"><span class="lab">脱退/加入の実機確認（最重要）</span>自動化の前に：再加入は<b>盟主の承認制か</b>（承認制ならリクエストは自動でも承認は人）、<b>クールダウン/ペナルティ</b>（貢献度リセット等）があるか。再加入は毎回<b>成功を再チェック</b>し、失敗なら大きく警告＋リトライ。<b>「脱退したまま戻れていない」を絶対に放置しない。</b></div>
+
+<footer>ブラウザ三国志 自動リング保護サイクル 設計図 ・ 設計フェーズ（実装は承認後） ・ 数字はすべて既定案で、実運用に合わせて調整可能。</footer>
+</div>
+
+</body>
+</html>
