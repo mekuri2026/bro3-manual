@@ -250,7 +250,7 @@
 <h2><span class="n">07</span>安全設計 ・ 確認事項</h2>
 <div class="note good"><span class="lab">BAN対策として自然に効く</span>夜間（休戦）は破棄→取得の往復をせず「22時に埋めて保持」なので、<b>一番BOTらしい深夜帯にほぼ無通信</b>。乱数リード・最大稼働時間の上限も併用。</div>
 <div class="note warn"><span class="lab">自己責任</span>長時間の無人自動化はBANリスクが最も高い機能。手動出兵と同じリクエストのみで検出回避はしない。<b>BAN/規約リスクは利用者の自己責任</b>。なお、このBAN評価は一般論からの推測でありブラ三固有の保証ではない。</div>
-<div class="note warn"><span class="lab">実装時に確認</span>破棄 <code>territory_proc.php?mode=remove</code> が<b>拠点切替を要するか</b>を実機で確認。座標+ssidのみで破棄できれば、めくり/鹵獲と完全無干渉で同時実行。切替が要る場合は一瞬だけ切替→戻すを出兵の合間に差し込む。</div>
+<div class="note good"><span class="lab">✓ 確認済み（既存コードで実証）</span>破棄は <code>POST /territory_proc.php</code>、body= <code>x=&y=&mode=remove&api=1</code>、<b>セッションcookieのみ（ssid不要・拠点切替不要）</b>。座標だけで破棄できる＝<b>めくり/鹵獲と完全無干渉で同時実行OK</b>。既存 <code>removeCell()</code> に破棄成否判定＋再送＋地図確認まで実装済みで流用可。</div>
 <div class="note warn"><span class="lab">脱退/加入の実機確認（最重要）</span>自動化の前に：再加入は<b>盟主の承認制か</b>（承認制ならリクエストは自動でも承認は人）、<b>クールダウン/ペナルティ</b>（貢献度リセット等）があるか。再加入は毎回<b>成功を再チェック</b>し、失敗なら大きく警告＋リトライ。<b>「脱退したまま戻れていない」を絶対に放置しない。</b></div>
 
 <footer>ブラウザ三国志 自動リング保護サイクル 設計図 ・ 設計フェーズ（実装は承認後） ・ 数字はすべて既定案で、実運用に合わせて調整可能。</footer>
