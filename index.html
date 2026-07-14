@@ -130,7 +130,7 @@
   <p class="eyebrow">ブラウザ三国志 ユーザースクリプト</p>
   <h1>ルート捲り &amp; 施設削除<br>操作マニュアル</h1>
   <p class="lede">マップのマスを順に捲る／鹵獲する「ルート捲り」と、拠点の施設を自動削除する「施設削除」。この2本の使い方をまとめました。パネルの色分けとこのマニュアルの色は対応しています。</p>
-  <span class="ver">ルート捲り v5.42 ・ 施設削除 v0.20</span>
+  <span class="ver">ルート捲り v5.53 ・ 施設削除 v0.20</span>
 </header>
 
 <nav aria-label="目次">
@@ -144,6 +144,7 @@
   <a href="#fac"><span class="dot" style="--k:var(--fac)"></span>施設削除</a>
   <a href="#update"><span class="dot" style="--k:var(--tool)"></span>更新</a>
   <a href="#trouble"><span class="dot" style="--k:var(--log)"></span>停止・困ったら</a>
+  <a href="#history"><span class="dot" style="--k:var(--tool)"></span>更新履歴</a>
 </nav>
 
 <!-- はじめに -->
@@ -191,8 +192,8 @@
       <h3>手順</h3>
       <ol class="steps" style="--k:var(--meku)">
         <li><b class="k">出兵拠点</b> を選ぶ（★は現在地）。無ければ <b class="k">↻</b> で本拠地含む全拠点を再取得。</li>
-        <li><b class="k">この拠点の武将を取得</b> → 出てきた武将に <b class="k">☑</b>。複数チェックでローテーション。<strong>☑した武将が自動保存され、めくり武将になります</strong>（登録ボタンは不要）。</li>
-        <li><b class="k">ルート作成: ON</b> → マップのマスを順にクリックして経由地を作る。<b class="k">1つ戻す</b>／<b class="k">クリア</b>で修正。</li>
+        <li><b class="k">この拠点の武将を取得</b> → 出てきた武将に <b class="k">☑</b>。複数チェックでローテーション。<strong>☑した武将が自動保存され、めくり武将になります</strong>（登録ボタンは不要）。カードは大きなアイコンでスキル・コストも表示され、行にマウスを乗せると詳細全文が見えます。</li>
+        <li><b class="k">ルート作成: ON</b> → マップのマスを順にクリックして経由地を作る。<b class="k">1つ戻す</b>／<b class="k">クリア</b>で修正。破棄チェックをまとめて付けるなら <b class="k">全経由地の破棄を一括✓</b>。</li>
         <li><b class="k">ルート確認</b> で赤=取得予定・黄=等級超で止まる可能性・灰=回避、を確認 → <b class="k">開始</b>。</li>
       </ol>
       <h3>設定の意味</h3>
@@ -213,7 +214,7 @@
           <tr><td class="opt">経由地以外を破棄</td><td class="def">OFF</td><td>経由地チェックした所だけ残し、他は取得後すぐ破棄。</td></tr>
         </tbody>
       </table></div>
-      <div class="note good"><span class="lab">継続する</span>画面を移動・リロードしても、前進中だっためくりは自動で再開します。めくり武将（☑）はリロード後も保持されます。</div>
+      <div class="note good"><span class="lab">継続する</span>画面を移動・リロードしても、前進中だっためくりは自動で再開し、破棄予定のマスも漏れずに引き継がれます。<strong>経由地（リング）とめくり武将（☑）もリロード後に自動復元</strong>されます。</div>
     </div>
   </div>
 </section>
@@ -223,12 +224,12 @@
   <div class="card" style="--k:var(--guard)">
     <div class="head"><h2>🛡 番人モード</h2></div>
     <div class="body">
-      <p>設定したルート上のマスを見張り、<strong>空き地になったら自動で取り直す</strong>機能。囲い（リング）を維持したいときに。放置OK・リロードしても継続します。</p>
+      <p>設定したルート上のマスを見張り、<strong>空き地になったら自動で取り直す</strong>機能。囲い（リング）を維持したいときに。マスの破棄タイマーを読んで<strong>賢く待ちます</strong>（完了がまだ遠い間はほとんど確認せず、完了間際だけ細かく確認）。放置OK・リロードしても継続します。</p>
       <ol class="steps" style="--k:var(--guard)">
         <li>維持したいマスを経由地クリックで2点以上セット（<a class="jump" href="#ring">リング生成</a>で一気に作れます）。</li>
-        <li><b class="k">間隔秒</b>（既定60）を決めて <b class="k">番人モード: ON</b>。</li>
+        <li><b class="k">最短間隔秒</b>（既定10）を決めて <b class="k">番人モード: ON</b>。これは確認間隔の下限で、普段はもっと疎に待ちます。</li>
       </ol>
-      <p class="muted">めくりと番人は同時には走りません（排他）。番人ONの間はその監視が優先されます。</p>
+      <p class="muted">めくり・鹵獲と<strong>同時に動かせます</strong>。内部で出兵を1件ずつ順番に処理するので、出兵元拠点の取り違えは起きません。一時的な読み取り失敗で勝手にOFFになることもありません（OFFにするのは停止ボタンだけ）。</p>
     </div>
   </div>
 </section>
@@ -276,17 +277,14 @@
   <div class="card" style="--k:var(--loot)">
     <div class="head"><h2>武将の排他ルール</h2><span class="tag">重要</span></div>
     <div class="body">
-      <p>同じ武将は同時に2つの用途では使えません（1体は1回しか出兵できないため）。そこで <strong>めくり・鹵獲A・鹵獲B は互いに排他ロック</strong>されます。</p>
+      <p>同じ武将は同時に2つの用途では使えません（1体は1回しか出兵できないため）。ロックは<strong>実行中だけ</strong>かかります。停止中は☑を自由に付け替えできます（カードの上げ下げはゲーム標準の操作でOK）。</p>
       <ul class="plain">
-        <li>めくりで☑した武将は、鹵獲A/Bのリストで <b class="k">🔒他用</b> となり選べません。</li>
-        <li>鹵獲に登録した武将は、めくりのリストで <b class="k">🔒鹵獲用</b> となり選べません。</li>
+        <li><b>鹵獲を実行中</b>：その武将はめくりのリストで <b class="k">🔒鹵獲中</b> となり選べません。</li>
+        <li><b>めくり／番人を実行中</b>：その☑武将は鹵獲のリストで <b class="k">🔒他で使用中</b> となり選べません。</li>
       </ul>
-      <h3>解除のしかた</h3>
-      <ul class="plain">
-        <li><b>めくり武将を外す</b>：めくりのリストで☑を外す（＝自動で解除）。まとめて外すなら <b class="k">[全解除]</b>。</li>
-        <li><b>鹵獲武将を外す</b>：そのチャンネルのリストで☑を外す。めくり側に出る <b class="k">🔒鹵獲用 [解除]</b> からでも外せます。</li>
-      </ul>
-      <div class="note good"><span class="lab">確認</span>鹵獲する拠点とめくりする拠点が同じ場合もあるため、排他は<strong>双方向</strong>です。片方に入れたら他方では自動でロックされます。</div>
+      <h3>機能の同時利用</h3>
+      <p>めくり・番人・鹵獲A/Bは<strong>同時に動かせます</strong>。それぞれ別の武将を割り当ててください（同じ武将を使うと帰還待ちで交互に待たされます）。まとめて外すなら、めくりは <b class="k">[全解除]</b>、鹵獲は <b class="k">[武将クリア]</b>。</p>
+      <div class="note good"><span class="lab">確認</span>作り替えた武将選択は出兵に直結します。長く回す前に、少量で「意図した武将・拠点で出るか」を確認してください。</div>
     </div>
   </div>
 </section>
@@ -335,8 +333,32 @@
         <li><b>出兵拠点に本拠地が無い</b>：<b class="k">↻</b> を押すと本拠地含む全拠点を取り直します（★＝現在地が先頭）。</li>
         <li><b>意図しない武将が出る</b>：<a class="jump" href="#cards">武将の排他</a>を確認。めくり／鹵獲の☑が正しいか、長時間動かす前に少量でテスト。</li>
         <li><b>ログ</b>：📜ログブロックに動作履歴。<b class="k">ログをコピー</b>で共有できます。</li>
+        <li><b>放置するとタイムアウトで止まる</b>：🔧ツールブロックの <b class="k">セッション維持</b>（既定ON）が約3分ごとに軽い通信を送り、放置してもセッションが切れにくくなります。万一切れた時はログに <b class="k">⚠⚠ セッション切れの可能性</b> と警告が出るので、ページを開き直してください。</li>
       </ul>
       <div class="note good"><span class="lab">継続の仕様</span>めくりの前進・鹵獲の周回・番人モードは、画面遷移やリロードでも裏で自動再開します。完全に止めたい時は各ブロックの停止か <b class="k">■ 全停止</b> を使ってください。</div>
+    </div>
+  </div>
+</section>
+
+<!-- 更新履歴 -->
+<section id="history">
+  <div class="card" style="--k:var(--tool)">
+    <div class="head"><h2>更新履歴</h2><span class="tag">ルート捲り</span></div>
+    <div class="body">
+      <p class="muted">Tampermonkeyの「最後の更新をチェック」で最新版になります（<a class="jump" href="#update">更新のしかた</a>）。</p>
+      <div class="tw"><table>
+        <thead><tr><th>版</th><th>日付</th><th>変更内容</th></tr></thead>
+        <tbody>
+          <tr><td class="opt">v5.53</td><td class="def">2026-07-15</td><td>武将カードを大型表示に。アイコン拡大・名前太字・スキル/コスト表示・行にマウスを乗せると詳細全文。</td></tr>
+          <tr><td class="opt">v5.52</td><td class="def">2026-07-15</td><td><strong>めくり・番人・鹵獲の同時利用に対応</strong>（開始ボタンが他の機能を止めなくなった）。内部で出兵を1件ずつ順番に処理し、出兵元拠点の取り違えを防止。</td></tr>
+          <tr><td class="opt">v5.51</td><td class="def">2026-07-14</td><td><strong>セッション維持</strong>を追加（既定ON・放置タイムアウト対策）。経由地（リング）をリロード後に自動復元。破棄予定を出兵した時点で記録しリロードでも破棄漏れゼロに。番人が一時的な不調で勝手にOFFになる問題を修正。</td></tr>
+          <tr><td class="opt">v5.50</td><td class="def">2026-07-14</td><td>出兵できない時に理由を詳しく表示（原因の切り分けがしやすく）。</td></tr>
+          <tr><td class="opt">v5.49</td><td class="def">2026-07-14</td><td>番人がタイマー連動の賢い監視に（破棄完了が近い時だけ細かく確認・無駄な通信を大幅減）。破棄取得モードは番人に統合。「間隔秒」→「最短間隔秒（既定10）」。</td></tr>
+          <tr><td class="opt">v5.48</td><td class="def">2026-07-13</td><td><b class="k">全経由地の破棄を一括✓</b> ボタンを追加（チェック忘れ防止）。</td></tr>
+          <tr><td class="opt">v5.45</td><td class="def">2026-07-13</td><td>武将のロックを「実行中のみ」に変更。停止中は☑を自由に付け替え可能に。</td></tr>
+          <tr><td class="opt">v5.42</td><td class="def">2026-07</td><td>武将選択を各ブロック内での独立選択に刷新（めくり／鹵獲A／鹵獲Bが各自の拠点と武将を持つ）。</td></tr>
+        </tbody>
+      </table></div>
     </div>
   </div>
 </section>
